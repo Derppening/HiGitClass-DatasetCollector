@@ -1,10 +1,13 @@
 plugins {
     kotlin("jvm") version "1.4.10"
     kotlin("kapt") version "1.4.10"
+    id("com.github.johnrengelman.shadow") version "6.1.0"
 }
 
 group = "comp5331"
 version = "1.0-SNAPSHOT"
+
+val appEntryPoint = "comp5331.MainKt"
 
 repositories {
     mavenCentral()
@@ -20,6 +23,17 @@ dependencies {
     implementation("com.github.ajalt.clikt:clikt:3.0.1")
 }
 
-tasks.wrapper {
-    gradleVersion = "6.7"
+tasks {
+    shadowJar {
+        archiveFileName.set("${rootProject.name}.jar")
+
+        manifest {
+            attributes.apply {
+                this["Main-Class"] = appEntryPoint
+            }
+        }
+    }
+    wrapper {
+        gradleVersion = "6.7"
+    }
 }
