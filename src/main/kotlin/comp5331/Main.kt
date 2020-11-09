@@ -17,7 +17,7 @@ import java.nio.file.StandardOpenOption
 
 class MainCmd : CliktCommand() {
 
-    private val token: String? by option(help = "Github Token (Optional)")
+    private val token: String? by option(help = "Github Token")
     private val output: Path by option(help = "JSON Output Path").path().default(Paths.get("", "output.json"))
     private val numToFetch: Int by argument("NUM_TO_FETCH", help = "Number of repositories to fetch").int()
 
