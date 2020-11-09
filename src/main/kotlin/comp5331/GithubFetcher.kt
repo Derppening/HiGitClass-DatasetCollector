@@ -20,7 +20,8 @@ object GithubFetcher {
     }
 
     data class Config(
-            val token: String?
+            val token: String?,
+            val query: String?
     )
 
     private val httpClient = OkHttpClient()
@@ -33,11 +34,12 @@ object GithubFetcher {
     private val jsonAdapters = mutableMapOf<KClass<out Any>, JsonAdapter<out Any>>()
 
     fun fetchRepos(numToFetch: Int, config: Config): List<Repository> {
+        val query = config.query ?: "stars:>=1"
         val repos = mutableListOf<Repository>()
 
         var page = 1
         while (repos.size < numToFetch) {
-            val url = "${Endpoints.REPOSITORIES}?q=stars:>=1&sort=stars&order=desc&page=$page"
+            val url = "${Endpoints.REPOSITORIES}?q=${query}&sort=stars&order=desc&page=$page"
 
             val request = Request.Builder()
                     .apply {
