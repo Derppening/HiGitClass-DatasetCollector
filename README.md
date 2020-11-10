@@ -47,8 +47,3 @@ Optional Arguments:
 - `--query`: Specifies a custom query to execute.
     - Do not use this option to override the sort field or order!
 - `--output` Specifies a file to output the JSON dataset to.
-
-## Todo
-
-- [ ] Handling rate-limiting
-- [ ] Parallel Fetching Support
