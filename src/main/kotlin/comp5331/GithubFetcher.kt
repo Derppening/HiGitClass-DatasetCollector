@@ -8,8 +8,11 @@ import model.github.RepositoryResponse
 import model.github.TopicsResponse
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import okio.BufferedSource
 import okio.IOException
+import java.time.Duration
+import java.time.Instant
 import kotlin.reflect.KClass
 
 object GithubFetcher {
@@ -49,8 +52,7 @@ object GithubFetcher {
                     .build()
 
             println("Fetching page $page of Repositories (Current have ${repos.size})")
-            val repositories = httpClient.newCall(request).execute().use {
-                // TODO: Add handling for rate limiting
+            val repositories = fetchFromGithub(request).use {
                 if (!it.isSuccessful) {
                     throw IOException("Unexpected code ${it.code}")
                 }
@@ -75,12 +77,7 @@ object GithubFetcher {
                 .build()
 
         println("Fetching topics for ${repository.full_name}")
-        return httpClient.newCall(request).execute().use {
-            // TODO: Add handling for rate limiting
-            if (!it.isSuccessful) {
-                throw IOException("Unexpected code ${it.code}")
-            }
-
+        return fetchFromGithub(request).use {
             val response = deserializeJson<TopicsResponse>(checkNotNull(it.body).source())
 
             response.names
@@ -96,8 +93,7 @@ object GithubFetcher {
                 .build()
 
         println("Fetching Git Tree for ${repository.full_name}")
-        val readme = httpClient.newCall(refRequest).execute().use {
-            // TODO: Add handling for rate limiting
+        val readme = fetchFromGithub(refRequest).use {
             if (!it.isSuccessful) {
                 throw IOException("Unexpected code ${it.code}")
             }
@@ -118,12 +114,35 @@ object GithubFetcher {
                 .build()
 
         println("Fetching README for ${repository.full_name}")
-        return httpClient.newCall(readmeRequest).execute().use {
+        return fetchFromGithub(readmeRequest).use {
             if (!it.isSuccessful) {
                 throw IOException("Unexpected code ${it.code} (${it.message})")
             }
 
             checkNotNull(it.body).string()
+        }
+    }
+
+    private fun fetchFromGithub(request: Request): Response {
+        while (true) {
+            val response = httpClient.newCall(request).execute()
+
+            if (response.isSuccessful) {
+                return response
+            }
+
+            val headers = response.headers
+            if (headers["X-Ratelimit-Remaining"]?.toInt()?.equals(0) == true) {
+                val ratelimitReset = headers["X-Ratelimit-Reset"]?.toLong()
+                    ?: throw RuntimeException("Cannot find X-Ratelimit-Reset header")
+                val sleepUntil = Instant.ofEpochSecond(ratelimitReset)
+
+                println("Request \"${request.url}\" rate-limited! Sleeping until $sleepUntil")
+
+                Thread.sleep(Duration.between(Instant.now(), sleepUntil).toMillis())
+            } else {
+                throw IOException("Unexpected code when fetching ${request.url}: ${response.code}")
+            }
         }
     }
 
