@@ -62,7 +62,9 @@ class MainCmd : CliktCommand() {
             }
 
         Files.newBufferedWriter(output, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
-                .write(jsonAdapter.toJson(outData))
+            .use {
+                it.write(jsonAdapter.toJson(outData))
+            }
     }
 }
 
