@@ -10,7 +10,6 @@ data class GitTreeResponse(
 
     @JsonClass(generateAdapter = true)
     data class TreeNode(
-        val path: String,
-        val url: String
+        val path: String
     )
 }
