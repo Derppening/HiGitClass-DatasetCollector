@@ -22,7 +22,7 @@ data class RepositoryOutputFormat(
                     tags = topics,
                     super_label = null,
                     sub_label = null,
-                    repo_name_seg = repository.name.replace(Regex("[a-zA-Z\\d]"), " "),
+                    repo_name_seg = repository.name.replace(Regex("[^a-zA-Z\\d]"), " "),
                     repo_name = repository.full_name
             )
         }
