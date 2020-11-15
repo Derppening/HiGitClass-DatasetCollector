@@ -55,6 +55,7 @@ class MainCmd : CliktCommand() {
         val moshi = Moshi.Builder().build()
         val type = Types.newParameterizedType(List::class.java, RepositoryOutputFormat::class.java)
         val jsonAdapter = moshi.adapter<List<RepositoryOutputFormat>>(type)
+            .serializeNulls()
             .let {
                 if (pretty) {
                     it.indent(" ".repeat(4))
