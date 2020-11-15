@@ -22,6 +22,7 @@ class MainCmd : CliktCommand() {
     private val token: String? by option(help = "Github Token")
     private val query: String? by option(help = "Github Query String Override")
     private val parallel: Boolean by option(help = "Fetch topics and README asynchronously").flag()
+    private val pretty: Boolean by option(help = "Pretty-print the JSON output").flag()
     private val output: Path by option(help = "JSON Output Path").path().default(Paths.get("", "output.json"))
     private val numToFetch: Int by argument("NUM_TO_FETCH", help = "Number of repositories to fetch").int()
 
@@ -54,6 +55,11 @@ class MainCmd : CliktCommand() {
         val moshi = Moshi.Builder().build()
         val type = Types.newParameterizedType(List::class.java, RepositoryOutputFormat::class.java)
         val jsonAdapter = moshi.adapter<List<RepositoryOutputFormat>>(type)
+            .let {
+                if (pretty) {
+                    it.indent(" ".repeat(4))
+                } else it
+            }
 
         Files.newBufferedWriter(output, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
                 .write(jsonAdapter.toJson(outData))
