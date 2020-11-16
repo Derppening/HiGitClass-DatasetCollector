@@ -1,2 +1,2 @@
-rootProject.name = "HitGitClass-DatasetCollector"
+rootProject.name = "HiGitClass-DatasetCollector"
 
