@@ -25,7 +25,7 @@ class MainCmd : CliktCommand() {
     override fun run() = Unit
 }
 
-class FetchCmd : CliktCommand() {
+class FetchCmd : CliktCommand(help = "Fetches a list of repositories from GitHub.", name = "fetch") {
 
     private val token: String? by option(help = "Github Token")
     private val query: String? by option(help = "Github Query String Override")
@@ -165,24 +165,6 @@ class TransformDatasetCmd :
         } finally {
             datasetWriter?.close()
             labelsWriter?.close()
-        }
-
-        Files.newBufferedWriter(
-            Paths.get("", "dataset.txt"),
-            StandardCharsets.UTF_8,
-            StandardOpenOption.CREATE,
-            StandardOpenOption.TRUNCATE_EXISTING
-        ).use { writer ->
-            Files.lines(input)
-                .use { lines ->
-                    lines.forEach {
-                        val inDataset = checkNotNull(jsonAdapter.fromJson(it))
-                        val line = inDataset.asDocument()
-
-                        writer.write(line)
-                        writer.newLine()
-                    }
-                }
         }
     }
 
