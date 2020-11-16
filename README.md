@@ -36,6 +36,12 @@ Run `java -jar HiGitClass-DatasetCollector.jar --help` for explanation of option
 
 ## Command-Line Options
 
+There are three subcommands supported by this application.
+
+### Fetching Repositories (`fetch`)
+
+This subcommand fetches a list of repositories from GitHub based on a given query.
+
 Required Arguments:
 
 - `NUM_TO_FETCH`: Number of repositories to fetch
@@ -47,3 +53,28 @@ Optional Arguments:
 - `--query`: Specifies a custom query to execute.
     - Do not use this option to override the sort field or order!
 - `--output` Specifies a file to output the JSON dataset to.
+- `--parallel`: Download README and repo topics in parallel
+- `--pretty`: Output pretty JSON
+
+### Document Format Transformation (`transform-doc`)
+
+This subcommand transforms the `output.json` emitted by the `fetch` command to the format accepted by HiGitClass, which 
+is a list of JSON objects delimited by newlines.
+
+Required Arguments:
+
+- `--input`: The input file emitted by `fetch`
+- `--output`: The location to the output file
+
+### Dataset Format Transformation (`transform-dataset`)
+
+This subcommand outputs `dataset.txt` and `labels.txt` based on the given *transformed* dataset.
+
+Required Arguments:
+
+- `--input`: The path to the input *transformed* JSON
+    - Note that the file must be transformed (by running through `transform-doc`)
+
+Optional Arguments:
+
+- `--output`: The directory to output `dataset.txt` and `labels.txt`
