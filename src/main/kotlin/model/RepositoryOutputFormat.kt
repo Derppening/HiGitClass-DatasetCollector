@@ -16,6 +16,7 @@ data class RepositoryOutputFormat(
 
     fun asDocument(): String {
         return arrayOf(
+            text.replace(Regex("\\s"), " "),
             tags.joinToString(" "),
             repo_name_seg,
             user
