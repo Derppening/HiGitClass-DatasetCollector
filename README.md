@@ -56,25 +56,34 @@ Optional Arguments:
 - `--parallel`: Download README and repo topics in parallel
 - `--pretty`: Output pretty JSON
 
-### Document Format Transformation (`transform-doc`)
-
-This subcommand transforms the `output.json` emitted by the `fetch` command to the format accepted by HiGitClass, which 
-is a list of JSON objects delimited by newlines.
-
-Required Arguments:
-
-- `--input`: The input file emitted by `fetch`
-- `--output`: The location to the output file
-
 ### Dataset Format Transformation (`transform-dataset`)
 
-This subcommand outputs `dataset.txt` and `labels.txt` based on the given *transformed* dataset.
+This subcommand transforms the `output.json` emitted by the `fetch` command to the format accepted by HiGitClass, which 
+is a list of JSON objects delimited by newlines. In addition, this subcommand also performs text preprocessing and emits
+`dataset.txt` required by ESim for embedding discovery.
+
+This step can be run immediately after the data has been collected by `fetch`, or deferred until all entries in the 
+dataset has been labeled.
 
 Required Arguments:
 
-- `--input`: The path to the input *transformed* JSON
-    - Note that the file must be transformed (by running through `transform-doc`)
+- `[INPUT]`: The input file emitted by `fetch`
 
 Optional Arguments:
 
-- `--output`: The directory to output `dataset.txt` and `labels.txt`
+- `--output-dir`: The directory to output `Hier.json` and `dataset.txt`
+
+### Label Extraction (`emit-labels`)
+
+This subcommand outputs `labels.txt` based on the given *transformed* dataset.
+
+This step should be run only after all entries in the dataset has been labeled.
+
+Required Arguments:
+
+- `[INPUT]`: The path to the input *transformed* JSON
+    - Note that the file must be transformed (by running through `transform-dataset`)
+
+Optional Arguments:
+
+- `--output`: The directory to output `labels.txt`

@@ -12,7 +12,6 @@ import com.github.ajalt.clikt.parameters.types.path
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import model.RepositoryOutputFormat
-import java.io.BufferedWriter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -83,14 +82,13 @@ class FetchCmd : CliktCommand(help = "Fetches a list of repositories from GitHub
 }
 
 class TransformDocumentCmd :
-    CliktCommand(help = "Transforms a collected dataset to a JSON object per line.", name = "transform-doc") {
+    CliktCommand(help = "Transforms a collected dataset to Hier.json and dataset.txt.", name = "transform-dataset") {
 
-    private val input: Path by option(help = "Path to input JSON")
+    private val input: Path by argument(help = "Path to input JSON")
         .path(mustExist = true, canBeDir = false, mustBeReadable = true)
-        .required()
-    private val output: Path by option(help = "Path to output JSON")
-        .path()
-        .required()
+    private val outputDir: Path by option(help = "Directory to output files")
+        .path(mustExist = true, canBeFile = false, mustBeWritable = true)
+        .default(Paths.get(""))
 
     override fun run() {
         val moshi = Moshi.Builder().build()
@@ -98,34 +96,49 @@ class TransformDocumentCmd :
         val oldJsonAdapter = moshi.adapter<List<RepositoryOutputFormat>>(type)
 
         val hier = checkNotNull(oldJsonAdapter.fromJson(Files.readString(input)))
-//        val newHier = hier.map {
-//            it.copy(text = it.text)
-//        }
+        val newHier = hier.map {
+            it.copy(text = RepositoryOutputFormat.preprocessText(it.text))
+        }
 
         val newJsonAdapter = moshi.adapter(RepositoryOutputFormat::class.java)
 
         Files.newBufferedWriter(
-            output,
+            outputDir.resolve(HIER_FILENAME),
             StandardCharsets.UTF_8,
             StandardOpenOption.CREATE,
             StandardOpenOption.TRUNCATE_EXISTING
         )
             .use { writer ->
-                hier.forEach {
-//                newHier.forEach {
+                newHier.forEach {
                     writer.write(newJsonAdapter.toJson(it))
                     writer.newLine()
                 }
             }
+        Files.newBufferedWriter(
+            outputDir.resolve(DATASET_FILENAME),
+            StandardCharsets.UTF_8,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.TRUNCATE_EXISTING
+        )
+            .use { writer ->
+                newHier.forEach { entry ->
+                    writer.write(entry.asDocument())
+                    writer.newLine()
+                }
+            }
+    }
+
+    companion object {
+        private const val HIER_FILENAME = "Hier.json"
+        private const val DATASET_FILENAME = "dataset.txt"
     }
 }
 
-class TransformDatasetCmd :
-    CliktCommand(help = "Emits necessary text files based on a collected JSON file.", name = "transform-dataset") {
+class EmitLabels :
+    CliktCommand(help = "Emits the labels of each dataset entry to a text file.", name = "emit-labels") {
 
-    private val input: Path by option(help = "Path to input JSON")
+    private val input: Path by argument(help = "Path to input JSON")
         .path(mustExist = true, canBeDir = false, mustBeReadable = true)
-        .required()
     private val outputDir: Path by option(help = "Directory to output files")
         .path(mustExist = true, canBeFile = false, mustBeWritable = true)
         .default(Paths.get(""))
@@ -134,46 +147,30 @@ class TransformDatasetCmd :
         val moshi = Moshi.Builder().build()
         val jsonAdapter = moshi.adapter(RepositoryOutputFormat::class.java)
 
-        val datasetPath = outputDir.resolve(DATASET_FILENAME)
         val labelsPath = outputDir.resolve(LABELS_FILENAME)
 
-        Files.deleteIfExists(datasetPath)
         Files.deleteIfExists(labelsPath)
 
-        var datasetWriter: BufferedWriter? = null
-        var labelsWriter: BufferedWriter? = null
-        try {
-            datasetWriter = Files.newBufferedWriter(datasetPath)
-            labelsWriter = Files.newBufferedWriter(labelsPath)
-
+        Files.newBufferedWriter(labelsPath).use { writer ->
             Files.lines(input)
                 .use { lines ->
                     lines.forEach { line ->
                         val inDataset = checkNotNull(jsonAdapter.fromJson(line))
-                        val document = inDataset.asDocument()
 
-                        checkNotNull(datasetWriter).let {
-                            it.write(document)
-                            it.newLine()
-                        }
-                        checkNotNull(labelsWriter).let {
+                        writer.let {
                             it.write(requireNotNull(inDataset.sub_label))
                             it.newLine()
                         }
                     }
                 }
-        } finally {
-            datasetWriter?.close()
-            labelsWriter?.close()
         }
     }
 
     companion object {
-        private const val DATASET_FILENAME = "dataset.txt"
         private const val LABELS_FILENAME = "labels.txt"
     }
 }
 
 fun main(args: Array<String>) = MainCmd()
-    .subcommands(FetchCmd(), TransformDatasetCmd(), TransformDocumentCmd())
+    .subcommands(FetchCmd(), EmitLabels(), TransformDocumentCmd())
     .main(args)
